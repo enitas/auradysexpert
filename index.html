@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraDys Expert V4.1 - Neuro-Pédagogie & Kokoro Français</title>
+    <title>AuraDys Expert V4.2 - Multi-Moteur Vocale HD & Local</title>
 
     <!-- Isolation Cross-Origin pour WebAssembly/WebGPU (GitHub Pages & Cloudflare) -->
     <script src="coi-serviceworker.js"></script>
@@ -187,41 +187,6 @@
             box-shadow: var(--shadow-soft); position: relative; outline: none; overflow-y: auto;
         }
 
-        .reading-ruler {
-            position: absolute; left: 0; right: 0; height: 40px;
-            background: rgba(255, 242, 117, 0.35); border-top: 2px solid #E6C200;
-            border-bottom: 2px solid #E6C200; pointer-events: none; display: none; z-index: 10;
-        }
-
-        .base10-board {
-            display: flex; gap: 15px; min-height: 180px; background: var(--bg-secondary);
-            border-radius: var(--border-radius); padding: 1rem; margin-top: 1rem;
-            align-items: flex-end; justify-content: center;
-        }
-
-        .b10-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .b10-hundreds { width: 50px; height: 50px; background: #2980B9; border-radius: 4px; }
-        .b10-tens { width: 12px; height: 45px; background: #27AE60; border-radius: 3px; }
-        .b10-units { width: 12px; height: 12px; background: #E67E22; border-radius: 2px; }
-
-        .operation-grid {
-            display: grid; grid-template-columns: repeat(4, 60px); gap: 8px;
-            justify-content: center; margin: 1.5rem 0; font-family: monospace; font-size: 1.8rem;
-        }
-
-        .op-cell {
-            width: 60px; height: 60px; border: 2px solid var(--border-color);
-            border-radius: 8px; text-align: center; line-height: 56px;
-            background: var(--bg-surface); font-weight: 700;
-        }
-
-        .op-cell.carry {
-            height: 35px; font-size: 1rem; line-height: 30px; border-style: dashed;
-            color: #C41E3A; background: #FFF0F0;
-        }
-
-        .op-line { grid-column: span 4; height: 4px; background: var(--text-primary); border-radius: 2px; }
-
         .gaze-target {
             position: fixed; width: 24px; height: 24px; border-radius: 50%;
             background: rgba(231, 76, 60, 0.7); border: 2px solid white;
@@ -245,11 +210,11 @@
     <header>
         <div class="brand">
             <i class="fa-solid fa-brain-circuit"></i>
-            <span>AuraDys <small style="font-size:0.6em; opacity:0.8;">EXPERT V4.1</small></span>
+            <span>AuraDys <small style="font-size:0.6em; opacity:0.8;">EXPERT V4.2</small></span>
         </div>
         
         <nav class="nav-tabs non-examen-elem" role="tablist">
-            <button class="nav-btn active" data-tab="tab-lecture" role="tab"><i class="fa-solid fa-book-open"></i> Lecture & Kokoro</button>
+            <button class="nav-btn active" data-tab="tab-lecture" role="tab"><i class="fa-solid fa-book-open"></i> Lecture & Synthèse</button>
             <button class="nav-btn" data-tab="tab-labo" role="tab"><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion</button>
             <button class="nav-btn" data-tab="tab-falc" role="tab"><i class="fa-solid fa-wand-magic-sparkles"></i> FALC</button>
             <button class="nav-btn" data-tab="tab-maths" role="tab"><i class="fa-solid fa-calculator"></i> Dyscalculie</button>
@@ -269,19 +234,18 @@
         <section id="tab-lecture" class="tab-panel active">
             <div class="reader-grid">
                 <aside class="settings-card non-examen-elem">
-                    <h3><i class="fa-solid fa-sliders"></i> Réglages Phonologiques</h3>
+                    <h3><i class="fa-solid fa-sliders"></i> Réglages Synthèse & Lecture</h3>
+                    
                     <div class="form-group">
-                        <label for="select-phoneme">Surligner Phonème Cible</label>
-                        <select id="select-phoneme" class="btn-action btn-secondary" style="width:100%;">
-                            <option value="none">Aucun</option>
-                            <option value="bd">Confusions b / d</option>
-                            <option value="pq">Confusions p / q</option>
-                            <option value="fv">Confusions f / v</option>
+                        <label for="select-tts-engine">Moteur Vocal</label>
+                        <select id="select-tts-engine" class="btn-action btn-secondary" style="width:100%;">
+                            <option value="native" selected>⚡ Voix Système HD (Recommandé)</option>
+                            <option value="kokoro">🧠 Kokoro-82M Local ONNX</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="range-speech-rate">Cadence Vocale (Kokoro)</label>
+                        <label for="range-speech-rate">Vitesse de Lecture</label>
                         <input type="range" id="range-speech-rate" class="range-slider" min="0.5" max="1.5" step="0.1" value="0.9">
                     </div>
 
@@ -291,21 +255,22 @@
                 </aside>
 
                 <div class="reader-workspace">
-                    <div class="toolbar non-examen-elem">
-                        <button class="btn-action" id="btn-play-kokoro"><i class="fa-solid fa-volume-high"></i> Lire avec Kokoro-82M (Français)</button>
+                    <div class="toolbar non-examen-elem" style="display:flex; gap:10px;">
+                        <button class="btn-action" id="btn-play-speech"><i class="fa-solid fa-play"></i> Lancer la Lecture</button>
+                        <button class="btn-action btn-secondary" id="btn-stop-speech"><i class="fa-solid fa-stop"></i> Stopper</button>
                         <button class="btn-action btn-secondary" id="btn-start-mfm-test"><i class="fa-solid fa-stopwatch"></i> Démarrer Test MFM</button>
                     </div>
 
                     <div style="position:relative; margin-top: 15px;">
                         <div id="editor-display" class="text-display-box" contenteditable="true" spellcheck="false">
-                            Les troubles spécifiques du langage écrit et de l'apprentissage nécessitent une compensation adaptée. AuraDys V4.1 intègre le modèle neuronal local Kokoro-82M configuré avec la voix française officielle, pour une lecture fluide, naturelle et respectueuse de la vie privée.
+                            Les troubles spécifiques du langage écrit et de l'apprentissage nécessitent une compensation adaptée. AuraDys V4.2 propose désormais deux moteurs de lecture : la voix système HD haute fidélité native pour une fluidité optimale, et le moteur local Kokoro-82M ONNX pour un fonctionnement 100 % hors-ligne.
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Autres onglets simplifiés pour l'autonomie -->
+        <!-- Autres onglets -->
         <section id="tab-labo" class="tab-panel">
             <div style="max-width:700px; margin:0 auto; text-align:center;" class="math-card">
                 <h3><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion</h3>
@@ -323,7 +288,7 @@
                 <div class="math-card">
                     <h3>Consigne Complexe</h3>
                     <textarea id="falc-input" style="width:100%; height:180px; padding:10px; border-radius:8px;" placeholder="Collez le texte..."></textarea>
-                    <button class="btn-action" id="btn-falc-process" style="width:100%; margin-top:10px;" onclick="document.getElementById('falc-output').innerHTML='<ul><li><strong>Texte simplifié en FALC.</strong></li></ul>'">Simplifier en FALC</button>
+                    <button class="btn-action" style="width:100%; margin-top:10px;" onclick="document.getElementById('falc-output').innerHTML='<ul><li><strong>Texte simplifié en FALC.</strong></li></ul>'">Simplifier en FALC</button>
                 </div>
                 <div class="math-card">
                     <h3>Version Épurée FALC</h3>
@@ -335,14 +300,14 @@
         <section id="tab-maths" class="tab-panel">
             <div class="math-card">
                 <h3>Dyscalculie - Base 10</h3>
-                <p>Manipulez les blocs pour matérialiser les quantités numériques.</p>
+                <p>Manipulation visuelle et tactile des quantités numériques.</p>
             </div>
         </section>
 
         <section id="tab-tdah" class="tab-panel">
             <div class="math-card">
                 <h3>TDAH - Structure & Focus</h3>
-                <p>Outils de fractionnement de l'attention et mindmapping.</p>
+                <p>Outils de structuration visuelle et canalisation attentionnelle.</p>
             </div>
         </section>
 
@@ -388,7 +353,7 @@
             });
         });
 
-        // Thèmes
+        // Thèmes & Polices
         document.getElementById('btn-theme-toggle').addEventListener('click', () => {
             const body = document.body;
             const current = body.getAttribute('data-theme');
@@ -402,29 +367,47 @@
             showToast("Basculement de police");
         });
 
-        // Kokoro-82M TTS avec Voix Française (ff_siwis)
-        document.getElementById('btn-play-kokoro').addEventListener('click', async () => {
-            const text = document.getElementById('editor-display').innerText;
+        // 1. Synthèse Système Native HD (Web Speech API)
+        function playNativeTTS(text, speed) {
+            if (!('speechSynthesis' in window)) {
+                showToast("Synthese vocale non supportée sur ce navigateur.");
+                return;
+            }
 
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = window.speechSynthesis.getVoices();
+            
+            // Sélection prioritaire des meilleures voix françaises HD / Naturelles
+            const bestVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Thomas') || v.name.includes('Audrey')))
+                            || voices.find(v => v.lang.startsWith('fr'));
+
+            if (bestVoice) utterance.voice = bestVoice;
+            utterance.lang = 'fr-FR';
+            utterance.rate = speed;
+
+            window.speechSynthesis.speak(utterance);
+            showToast("Lecture Vocale HD Système en cours...");
+        }
+
+        // 2. Moteur Kokoro-82M ONNX Local
+        async function playKokoroTTS(text, speed) {
             try {
                 if (!state.ttsModel && !state.isTTSLoading) {
                     state.isTTSLoading = true;
-                    showToast("1er lancement : Téléchargement du modèle Kokoro-82M (~90 Mo)... Patientez...");
+                    showToast("1er chargement Kokoro ONNX (~90 Mo)... Patientez...");
                     
                     state.ttsModel = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
                         dtype: "q8"
                     });
                     state.isTTSLoading = false;
-                    showToast("Modèle Kokoro-82M prêt !");
+                    showToast("Kokoro-82M prêt !");
                 } else if (state.isTTSLoading) {
-                    showToast("Chargement des poids en cours, veuillez patienter...");
+                    showToast("Chargement des poids en cours...");
                     return;
                 }
 
-                showToast("Génération de la voix française (ff_siwis)...");
-                const speed = parseFloat(document.getElementById('range-speech-rate').value) || 0.9;
-                
-                // Utilisation de la voix française officielle ff_siwis
+                showToast("Génération Kokoro locale...");
                 const result = await state.ttsModel.generate(text, {
                     voice: "ff_siwis",
                     speed: speed
@@ -439,14 +422,31 @@
                 source.connect(audioCtx.destination);
                 source.start(0);
 
-                showToast("Lecture audio en cours...");
+                showToast("Lecture Kokoro ONNX en cours...");
             } catch (err) {
-                console.warn("Échec Kokoro ONNX, repli vers la synthèse native :", err);
-                showToast("Mode secours : Voix système native");
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR';
-                window.speechSynthesis.speak(utterance);
+                console.warn("Bascule automatique sur la voix système :", err);
+                playNativeTTS(text, speed);
             }
+        }
+
+        // Actionnaire Boutons Lecture / Arrêt
+        document.getElementById('btn-play-speech').addEventListener('click', () => {
+            const text = document.getElementById('editor-display').innerText;
+            const engine = document.getElementById('select-tts-engine').value;
+            const speed = parseFloat(document.getElementById('range-speech-rate').value) || 0.9;
+
+            if (engine === 'native') {
+                playNativeTTS(text, speed);
+            } else {
+                playKokoroTTS(text, speed);
+            }
+        });
+
+        document.getElementById('btn-stop-speech').addEventListener('click', () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            showToast("Lecture interrompue.");
         });
 
         // Eye-Tracking
