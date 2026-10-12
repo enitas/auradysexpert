@@ -20,7 +20,6 @@ export class KokoroSpeechService {
     this.state.isLoading = true;
 
     try {
-      // Import dynamique de kokoro-js (chargé via CDN/Module)
       const { KokoroTTS } = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js');
 
       this.ttsModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
@@ -29,7 +28,7 @@ export class KokoroSpeechService {
 
       this.state.isLoaded = true;
       this.state.isLoading = false;
-      console.log('Modèle Kokoro-82M ONNX prêt pour la génération vocale locale.');
+      console.log('Modèle Kokoro-82M ONNX chargé avec succès.');
     } catch (error) {
       this.state.isLoading = false;
       console.error('Erreur lors du chargement de Kokoro-82M ONNX :', error);
@@ -38,26 +37,25 @@ export class KokoroSpeechService {
   }
 
   /**
-   * Génère et lit le texte avec une voix haute fidélité
+   * Génère et lit le texte avec la voix française haute fidélité (ff_siwis)
    */
   public async speak(text: string, config: Partial<KokoroConfig> = {}): Promise<void> {
     if (!this.state.isLoaded) {
       await this.initialize(config.dtype || 'q8');
     }
 
-    const voice = config.voice || 'af_bella';
+    // Utilisation de la voix française par défaut au lieu d'une voix US
+    const voice = config.voice || 'ff_siwis';
     const speed = config.speed || 0.9;
 
     try {
       this.state.isPlaying = true;
 
-      // Génération audio par Kokoro-82M
       const result = await this.ttsModel.generate(text, {
         voice: voice,
         speed: speed
       });
 
-      // Restitution via Web Audio API
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const buffer = audioCtx.createBuffer(1, result.audio.length, result.sampling_rate);
       buffer.getChannelData(0).set(result.audio);
@@ -78,9 +76,6 @@ export class KokoroSpeechService {
     }
   }
 
-  /**
-   * Mode secours via Web Speech API natif
-   */
   private fallbackSpeak(text: string, speed: number): void {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
