@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraDys Expert V4.3 - Neuro-Pédagogie & Multi-TTS</title>
+    <title>AuraDys Expert V5.0 - Plateforme Neuro-Pédagogique Interactive</title>
 
     <!-- Isolation Cross-Origin pour WebAssembly/WebGPU (GitHub Pages & Cloudflare) -->
     <script src="coi-serviceworker.js"></script>
@@ -15,8 +15,8 @@
     <!-- Icons FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Tesseract.js (OCR Worker) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
@@ -29,7 +29,6 @@
             --accent-hover: #2E5F43;
             --accent-light: #E2EFE7;
             --border-color: #DCD5C6;
-            --focus-ring: #0066CC;
             
             --syl-color-1: #005A9C;
             --syl-color-2: #C41E3A;
@@ -200,22 +199,21 @@
             border-bottom: 2px solid #E6C200; pointer-events: none; display: none; z-index: 10;
         }
 
-        /* Classes Phonologiques */
         .syl-1 { color: var(--syl-color-1); font-weight: 600; }
         .syl-2 { color: var(--syl-color-2); font-weight: 600; }
         .phoneme-target { background-color: var(--target-highlight); border-radius: 3px; padding: 0 2px; font-weight: 700; }
         .silent { color: var(--silent-letter); opacity: 0.55; }
 
         .base10-board {
-            display: flex; gap: 15px; min-height: 180px; background: var(--bg-secondary);
+            display: flex; gap: 12px; min-height: 180px; background: var(--bg-secondary);
             border-radius: var(--border-radius); padding: 1rem; margin-top: 1rem;
-            align-items: flex-end; justify-content: center;
+            align-items: flex-end; justify-content: center; flex-wrap: wrap;
         }
 
         .b10-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .b10-hundreds { width: 50px; height: 50px; background: #2980B9; border-radius: 4px; }
-        .b10-tens { width: 12px; height: 45px; background: #27AE60; border-radius: 3px; }
-        .b10-units { width: 12px; height: 12px; background: #E67E22; border-radius: 2px; }
+        .b10-hundreds { width: 50px; height: 50px; background: #2980B9; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .b10-tens { width: 14px; height: 50px; background: #27AE60; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .b10-units { width: 14px; height: 14px; background: #E67E22; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
         .operation-grid {
             display: grid; grid-template-columns: repeat(4, 60px); gap: 8px;
@@ -249,6 +247,27 @@
         }
 
         .toast-notification.show { transform: translateY(0); opacity: 1; }
+
+        /* Timer visuel TDAH */
+        .timer-circle {
+            width: 140px; height: 140px; border-radius: 50%;
+            background: conic-gradient(var(--accent-color) 0deg, var(--bg-secondary) 0deg);
+            display: flex; align-items: center; justify-content: center; margin: 1rem auto;
+            position: relative;
+        }
+
+        .timer-inner {
+            width: 110px; height: 110px; border-radius: 50%; background: var(--bg-surface);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 700; color: var(--accent-color);
+        }
+
+        .todo-item {
+            display: flex; align-items: center; gap: 12px; background: var(--bg-secondary);
+            padding: 12px 16px; border-radius: var(--border-radius); margin-bottom: 8px;
+        }
+
+        .todo-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent-color); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -258,51 +277,61 @@
     <header>
         <div class="brand">
             <i class="fa-solid fa-brain-circuit"></i>
-            <span>AuraDys <small style="font-size:0.6em; opacity:0.8;">EXPERT V4.3</small></span>
+            <span>AuraDys <small style="font-size:0.6em; opacity:0.8;">EXPERT V5.0</small></span>
         </div>
         
         <nav class="nav-tabs non-examen-elem" role="tablist">
-            <button class="nav-btn active" data-tab="tab-lecture" role="tab"><i class="fa-solid fa-book-open"></i> Lecture & Synthèse</button>
+            <button class="nav-btn active" data-tab="tab-lecture" role="tab"><i class="fa-solid fa-book-open"></i> Lecture & Bibliothèque</button>
             <button class="nav-btn" data-tab="tab-labo" role="tab"><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion</button>
-            <button class="nav-btn" data-tab="tab-falc" role="tab"><i class="fa-solid fa-wand-magic-sparkles"></i> FALC</button>
-            <button class="nav-btn" data-tab="tab-maths" role="tab"><i class="fa-solid fa-calculator"></i> Dyscalculie</button>
-            <button class="nav-btn" data-tab="tab-tdah" role="tab"><i class="fa-solid fa-diagram-project"></i> TDAH</button>
-            <button class="nav-btn" data-tab="tab-dashboard" role="tab"><i class="fa-solid fa-chart-line"></i> Dashboard MFM</button>
+            <button class="nav-btn" data-tab="tab-falc" role="tab"><i class="fa-solid fa-wand-magic-sparkles"></i> Simplificateur FALC</button>
+            <button class="nav-btn" data-tab="tab-maths" role="tab"><i class="fa-solid fa-calculator"></i> Dyscalculie & Base 10</button>
+            <button class="nav-btn" data-tab="tab-tdah" role="tab"><i class="fa-solid fa-clock"></i> Focus TDAH & Timer</button>
+            <button class="nav-btn" data-tab="tab-dashboard" role="tab"><i class="fa-solid fa-chart-line"></i> Dashboard Clinique MFM</button>
         </nav>
 
         <div class="top-controls">
             <div class="xp-badge non-examen-elem"><i class="fa-solid fa-trophy"></i> Nv. <span id="user-level">1</span> (<span id="user-xp">0</span> XP)</div>
-            <button class="btn-icon non-examen-elem" id="btn-theme-toggle" title="Thème"><i class="fa-solid fa-palette"></i></button>
-            <button class="btn-icon non-examen-elem" id="btn-font-toggle" title="Police Dys"><i class="fa-solid fa-font"></i></button>
+            <button class="btn-icon non-examen-elem" id="btn-theme-toggle" title="Changer de thème"><i class="fa-solid fa-palette"></i></button>
+            <button class="btn-icon non-examen-elem" id="btn-font-toggle" title="Police OpenDyslexic"><i class="fa-solid fa-font"></i></button>
             <button class="btn-action" id="btn-mode-examen" title="Mode Examen"><i class="fa-solid fa-shield-halved"></i> Examen</button>
         </div>
     </header>
 
     <main>
-        <!-- TAB LECTURE -->
+        <!-- 1. MODULE LECTURE & BIBLIOTHÈQUE JEUNESSE -->
         <section id="tab-lecture" class="tab-panel active">
             <div class="reader-grid">
                 <aside class="settings-card non-examen-elem">
-                    <h3><i class="fa-solid fa-sliders"></i> Réglages Synthèse & Lecture</h3>
-                    
-                    <!-- 1. MOTEUR VOCAL -->
+                    <h3><i class="fa-solid fa-book-bookmark"></i> Bibliothèque Jeunesse</h3>
                     <div class="form-group">
-                        <label for="select-tts-engine">Moteur Vocal</label>
-                        <select id="select-tts-engine" class="btn-action btn-secondary" style="width:100%;">
-                            <option value="native" selected>⚡ Voix Système HD (Fluide & Rapide)</option>
-                            <option value="kokoro">🧠 Kokoro-82M Local ONNX (Offline)</option>
+                        <label for="select-story">Choisir une Histoire Adaptée</label>
+                        <select id="select-story" class="btn-action btn-secondary" style="width:100%;">
+                            <option value="lievre">🐢 Le Lièvre et la Tortue (CE1-CE2)</option>
+                            <option value="corbeau">🧀 Le Corbeau et le Renard (CE2-CM1)</option>
+                            <option value="petit_prince">🦊 Le Petit Prince et le Renard (CM1-CM2)</option>
+                            <option value="custom">✏️ Saisir un texte personnalisé</option>
                         </select>
                     </div>
 
-                    <!-- 2. CADENCE VOCALE -->
+                    <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.25rem 0;">
+
+                    <h3><i class="fa-solid fa-sliders"></i> Réglages Synthèse Vocale</h3>
                     <div class="form-group">
-                        <label for="range-speech-rate">Vitesse de Lecture Vocal</label>
+                        <label for="select-tts-engine">Moteur Vocal</label>
+                        <select id="select-tts-engine" class="btn-action btn-secondary" style="width:100%;">
+                            <option value="native" selected>⚡ Voix Système HD (Fluide & Claire)</option>
+                            <option value="kokoro">🧠 Kokoro-82M ONNX Local (Offline)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="range-speech-rate">Cadence de Lecture</label>
                         <input type="range" id="range-speech-rate" class="range-slider" min="0.5" max="1.5" step="0.1" value="0.9">
                     </div>
 
                     <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.25rem 0;">
 
-                    <!-- 3. PHONÈMES CIBLES -->
+                    <h3><i class="fa-solid fa-wand-magic"></i> Aides Phonologiques</h3>
                     <div class="form-group">
                         <label for="select-phoneme">Surligner Phonèmes Cibles</label>
                         <select id="select-phoneme" class="btn-action btn-secondary" style="width:100%;">
@@ -313,95 +342,123 @@
                         </select>
                     </div>
 
-                    <!-- 4. ADAPTATIONS VISUELLES & ASSISTANCES -->
                     <div style="display:flex; flex-direction:column; gap:10px;">
-                        <button class="btn-action btn-secondary" id="btn-toggle-syl"><i class="fa-solid fa-scissors"></i> Coloration Syllabique</button>
+                        <button class="btn-action btn-secondary" id="btn-toggle-syl"><i class="fa-solid fa-scissors"></i> Syllabation Colorée</button>
                         <button class="btn-action btn-secondary" id="btn-toggle-silent"><i class="fa-solid fa-eye-slash"></i> Griser Lettres Muettes</button>
-                        <button class="btn-action btn-secondary" id="btn-toggle-ruler"><i class="fa-solid fa-ruler-horizontal"></i> Règle de Lecture Survol</button>
-                        <button class="btn-action btn-secondary" id="btn-toggle-eyetracking"><i class="fa-solid fa-eye"></i> Eye-Tracking (Regard)</button>
+                        <button class="btn-action btn-secondary" id="btn-toggle-ruler"><i class="fa-solid fa-ruler-horizontal"></i> Règle de Survol</button>
+                        <button class="btn-action btn-secondary" id="btn-toggle-eyetracking"><i class="fa-solid fa-eye"></i> Eye-Tracking (Pointeur Regard)</button>
                     </div>
                 </aside>
 
                 <div class="reader-workspace">
                     <div class="toolbar non-examen-elem" style="display:flex; gap:10px; flex-wrap:wrap;">
                         <button class="btn-action" id="btn-play-speech"><i class="fa-solid fa-play"></i> Lancer la Lecture</button>
-                        <button class="btn-action btn-secondary" id="btn-stop-speech"><i class="fa-solid fa-stop"></i> Stopper</button>
-                        <button class="btn-action btn-secondary" id="btn-start-mfm-test"><i class="fa-solid fa-stopwatch"></i> Démarrer Test MFM</button>
-                        <button class="btn-action btn-secondary" id="btn-dictation"><i class="fa-solid fa-microphone"></i> Dictée Vocale</button>
+                        <button class="btn-action btn-secondary" id="btn-stop-speech"><i class="fa-solid fa-stop"></i> Arroser / Stopper</button>
+                        <button class="btn-action btn-secondary" id="btn-start-mfm-test"><i class="fa-solid fa-stopwatch"></i> Lancer un Test MFM (1 min)</button>
                     </div>
 
                     <div style="position:relative; margin-top: 15px;">
                         <div id="reading-ruler-elem" class="reading-ruler"></div>
                         <div id="editor-display" class="text-display-box" contenteditable="true" spellcheck="false">
-                            Les troubles spécifiques du langage écrit et de l'apprentissage nécessitent une compensation adaptée. AuraDys V4.3 combine les outils visuels d'aide au décodage, l'analyse syllabique, et deux moteurs vocaux puissants pour faciliter la lecture au quotidien.
+                            Rien ne sert de courir ; il faut partir à point. Le Lièvre et la Tortue en sont un témoignage. « Gageons, dit celle-ci, que vous n'atteindrez point sitôt que moi ce but. » « Sitôt ? Êtes-vous sage ? » Reprit l'animal léger. « Ma commère, il vous faut purger avec quatre grains d'hellébore. » « Sage ou non, je parie encore. »
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB LABO ANTI-CONFUSION -->
+        <!-- 2. MODULE LABO ANTI-CONFUSION GÉNÉRATIF -->
         <section id="tab-labo" class="tab-panel">
-            <div style="max-width:700px; margin:0 auto; text-align:center;" class="math-card">
-                <h3><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion (Scaffolding Adaptatif)</h3>
-                <p style="margin-bottom:1rem; color:var(--text-muted);">Trouvez le graphème correct pour valider l'exercice :</p>
-                <div id="lab-word-display" style="font-size:2.8rem; font-weight:700; color:var(--accent-color); margin:1.5rem 0;">ba___eau</div>
-                
-                <div id="scaffolding-hint" style="margin-bottom:1rem; font-style:italic; color:#E67E22; display:none;">
-                    💡 Indice visuel activé : Le son produit une vibration sur les lèvres.
+            <div style="max-width:800px; margin:0 auto;" class="math-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h3><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion d/b/p/q</h3>
+                    <div class="xp-badge"><i class="fa-solid fa-bolt"></i> Score : <span id="quiz-score">0</span> pts</div>
                 </div>
 
-                <div style="display:flex; justify-content:center; gap:1.5rem;">
-                    <button class="btn-action" id="btn-choice-1">t</button>
-                    <button class="btn-action btn-secondary" id="btn-choice-2">d</button>
+                <div style="text-align:center; padding: 2rem 1rem; background:var(--bg-secondary); border-radius:12px;">
+                    <div style="font-size:1.1rem; color:var(--text-muted); margin-bottom:0.5rem;">Complétez le mot correctement :</div>
+                    <div id="quiz-word" style="font-size:3.5rem; font-weight:700; color:var(--accent-color); letter-spacing:0.1em; margin:1rem 0;">
+                        ba___eau
+                    </div>
+                    
+                    <div id="quiz-hint" style="margin: 1rem 0; font-style:italic; color:#E67E22; display:none;">
+                        💡 Indice : Regardez la forme du ventre de la lettre.
+                    </div>
+
+                    <div id="quiz-options" style="display:flex; justify-content:center; gap:1.5rem; margin-top:2rem;">
+                        <!-- Boutons générés dynamiquement -->
+                    </div>
+                </div>
+
+                <div style="margin-top:1.5rem; display:flex; justify-content:space-between;">
+                    <button class="btn-action btn-secondary" id="btn-next-quiz"><i class="fa-solid fa-forward"></i> Mot Suivant</button>
+                    <button class="btn-action btn-secondary" id="btn-speak-quiz-word"><i class="fa-solid fa-volume-high"></i> Écouter le mot</button>
                 </div>
             </div>
         </section>
 
-        <!-- TAB FALC -->
+        <!-- 3. MODULE SIMPLIFICATEUR FALC -->
         <section id="tab-falc" class="tab-panel">
             <div class="math-grid">
                 <div class="math-card">
-                    <h3>Consigne Complexe</h3>
-                    <textarea id="falc-input" style="width:100%; height:180px; padding:10px; border-radius:8px;" placeholder="Collez le texte à simplifier..."></textarea>
-                    <button class="btn-action" id="btn-falc-process" style="width:100%; margin-top:10px;">Simplifier en FALC</button>
+                    <h3>Consigne / Texte Complexe</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">Saisissez ou collez un texte scolaire à simplifier selon les normes FALC :</p>
+                    <textarea id="falc-input" style="width:100%; height:220px; padding:12px; border-radius:8px; border:1px solid var(--border-color); font-family:inherit;" placeholder="Exemple: Avant de commencer à rédiger votre devoir sur la feuille double, veuillez lire attentivement l'ensemble des questions posées et surligner les mots-clés au feutre jaune..."></textarea>
+                    <button class="btn-action" id="btn-falc-process" style="width:100%; margin-top:12px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Transformer en FALC Épuré</button>
                 </div>
+
                 <div class="math-card">
-                    <h3>Version Épurée FALC</h3>
-                    <div id="falc-output" class="text-display-box" style="min-height:180px;"></div>
+                    <h3>Version FALC (Facile À Lire et à Comprendre)</h3>
+                    <div id="falc-output" class="text-display-box" style="min-height:220px; background:var(--accent-light);">
+                        <em>La version simplifiée apparaîtra ici sous forme de consignes claires et directes...</em>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB DYSCALCULIE -->
+        <!-- 4. MODULE DYSCALCULIE & LABO BASE 10 -->
         <section id="tab-maths" class="tab-panel">
             <div class="math-grid">
                 <div class="math-card">
-                    <h3>Manipulation Base 10</h3>
-                    <div style="display:flex; gap:8px; margin-bottom:10px;">
-                        <button class="btn-action btn-secondary" id="btn-add-u">+1 Unité</button>
-                        <button class="btn-action btn-secondary" id="btn-add-d">+1 Dizaine</button>
-                        <button class="btn-action btn-secondary" id="btn-add-c">+1 Centaine</button>
+                    <h3>Manipulation Visuelle Base 10</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">Construisez et matérialisez les nombres avec les blocs :</p>
+                    
+                    <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+                        <button class="btn-action btn-secondary" id="btn-add-c"><i class="fa-solid fa-plus"></i> 100 (Centaine)</button>
+                        <button class="btn-action btn-secondary" id="btn-add-d"><i class="fa-solid fa-plus"></i> 10 (Dizaine)</button>
+                        <button class="btn-action btn-secondary" id="btn-add-u"><i class="fa-solid fa-plus"></i> 1 (Unité)</button>
+                        <button class="btn-action btn-secondary" id="btn-reset-b10" style="color:#C41E3A;"><i class="fa-solid fa-rotate-right"></i> Réinitialiser</button>
                     </div>
+
                     <div id="b10-board" class="base10-board"></div>
-                    <div style="margin-top:10px; font-weight:700;">Valeur : <span id="b10-val">0</span></div>
+
+                    <div style="margin-top:1rem; text-align:center; font-size:1.4rem; font-weight:700;">
+                        Valeur Totale : <span id="b10-val" style="color:var(--accent-color);">0</span>
+                    </div>
                 </div>
+
                 <div class="math-card">
                     <h3>Poseur d'Opérations Alignées</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">Inscrivez les chiffres et retenues dans les cases alignées :</p>
+
                     <div class="operation-grid">
-                        <div class="op-cell carry" contenteditable="true"></div>
-                        <div class="op-cell carry" contenteditable="true"></div>
-                        <div class="op-cell carry" contenteditable="true"></div>
-                        <div class="op-cell carry" contenteditable="true"></div>
+                        <div class="op-cell carry" contenteditable="true" title="Retenue"></div>
+                        <div class="op-cell carry" contenteditable="true" title="Retenue"></div>
+                        <div class="op-cell carry" contenteditable="true" title="Retenue"></div>
+                        <div class="op-cell carry" contenteditable="true" title="Retenue"></div>
+                        
                         <div class="op-cell" contenteditable="true">1</div>
                         <div class="op-cell" contenteditable="true">4</div>
                         <div class="op-cell" contenteditable="true">8</div>
                         <div class="op-cell" contenteditable="true">5</div>
+                        
                         <div class="op-cell" contenteditable="true">+</div>
                         <div class="op-cell" contenteditable="true">2</div>
                         <div class="op-cell" contenteditable="true">6</div>
                         <div class="op-cell" contenteditable="true">7</div>
+                        
                         <div class="op-line"></div>
+                        
                         <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
                         <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
                         <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
@@ -411,41 +468,100 @@
             </div>
         </section>
 
-        <!-- TAB TDAH -->
+        <!-- 5. MODULE FOCUS TDAH & TIMER -->
         <section id="tab-tdah" class="tab-panel">
-            <div class="math-card">
-                <h3>Carte Mentale TDAH & Structuration</h3>
-                <div style="height:350px; background:var(--bg-secondary); border-radius:12px; display:flex; align-items:center; justify-content:center; position:relative;">
-                    <div style="padding:15px 25px; background:var(--bg-surface); border:2px solid var(--accent-color); border-radius:20px; font-weight:700;">
-                        💡 Idée Centrale (TDAH)
+            <div class="math-grid">
+                <div class="math-card" style="text-align:center;">
+                    <h3><i class="fa-solid fa-stopwatch"></i> Chronomètre Visuel Time-Timer</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted);">Matérialisez le temps restant pour canaliser l'attention :</p>
+                    
+                    <div class="timer-circle" id="timer-display-circle">
+                        <div class="timer-inner" id="timer-text">05:00</div>
+                    </div>
+
+                    <div style="display:flex; justify-content:center; gap:10px; margin-top:1rem;">
+                        <button class="btn-action" id="btn-start-timer"><i class="fa-solid fa-play"></i> Démarrer 5 min</button>
+                        <button class="btn-action btn-secondary" id="btn-pause-timer"><i class="fa-solid fa-pause"></i> Pause</button>
+                        <button class="btn-action btn-secondary" id="btn-reset-timer"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                    </div>
+                </div>
+
+                <div class="math-card">
+                    <h3><i class="fa-solid fa-list-check"></i> Séquenceur de Tâches Illustré</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Cochez chaque étape franchie pour débloquer votre récompense :</p>
+
+                    <div id="todo-container">
+                        <div class="todo-item">
+                            <input type="checkbox" id="task-1">
+                            <label for="task-1">📖 Lire le premier paragraphe calmement</label>
+                        </div>
+                        <div class="todo-item">
+                            <input type="checkbox" id="task-2">
+                            <label for="task-2">✏️ Surligner les mots difficiles ou cibles</label>
+                        </div>
+                        <div class="todo-item">
+                            <input type="checkbox" id="task-3">
+                            <label for="task-3">🎧 Écouter la version vocale pour vérifier</label>
+                        </div>
+                        <div class="todo-item">
+                            <input type="checkbox" id="task-4">
+                            <label for="task-4">🎉 Répondre à la question de compréhension</label>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB DASHBOARD MFM -->
+        <!-- 6. MODULE DASHBOARD CLINIQUE MFM -->
         <section id="tab-dashboard" class="tab-panel">
             <div class="dashboard-grid">
                 <aside class="settings-card">
-                    <h3><i class="fa-solid fa-user-doctor"></i> Bilan Clinique</h3>
-                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Métriques mesurées lors des sessions de lecture.</p>
-                    <button class="btn-action" style="width:100%;" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimer Bilan MFM</button>
+                    <h3><i class="fa-solid fa-user-doctor"></i> Bilan Orthophonique MFM</h3>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Mesures métrologiques en temps réel exportables pour les professionnels de santé et enseignants.</p>
+                    <button class="btn-action" style="width:100%;" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimer le Bilan Clinique</button>
                 </aside>
 
                 <div style="display:flex; flex-direction:column; gap:1.5rem;">
                     <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem;">
                         <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:12px; text-align:center;">
-                            <small>Vitesse MFM</small>
-                            <div id="mfm-score-display" style="font-size:2rem; font-weight:700; color:var(--accent-color);">112 MFM</div>
+                            <small style="text-transform:uppercase; font-size:0.75rem; font-weight:700;">Vitesse MFM</small>
+                            <div id="mfm-score-display" style="font-size:2.2rem; font-weight:700; color:var(--accent-color);">112 MFM</div>
+                            <small style="color:var(--text-muted);">Mots/min maîtrisés</small>
                         </div>
+
                         <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:12px; text-align:center;">
-                            <small>Précision</small>
-                            <div id="mfm-precision-display" style="font-size:2rem; font-weight:700; color:var(--accent-color);">96%</div>
+                            <small style="text-transform:uppercase; font-size:0.75rem; font-weight:700;">Taux de Précision</small>
+                            <div id="mfm-precision-display" style="font-size:2.2rem; font-weight:700; color:var(--accent-color);">96%</div>
+                            <small style="color:var(--text-muted);">Mots lues sans erreur</small>
                         </div>
+
                         <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:12px; text-align:center;">
-                            <small>Niveau Gamifié</small>
-                            <div id="mfm-level-display" style="font-size:2rem; font-weight:700; color:var(--accent-color);">Nv. 1</div>
+                            <small style="text-transform:uppercase; font-size:0.75rem; font-weight:700;">Niveau Gamifié</small>
+                            <div id="mfm-level-display" style="font-size:2.2rem; font-weight:700; color:var(--accent-color);">Nv. 1</div>
+                            <small style="color:var(--text-muted);"><span id="dash-xp">0</span> XP Accumulés</small>
                         </div>
+                    </div>
+
+                    <div class="math-card">
+                        <h3>Historique des Sessions de Lecture</h3>
+                        <table style="width:100%; text-align:left; border-collapse:collapse; margin-top:10px;">
+                            <thead>
+                                <tr style="border-bottom:2px solid var(--border-color); font-size:0.9rem;">
+                                    <th style="padding:8px;">Date</th>
+                                    <th style="padding:8px;">Durée</th>
+                                    <th style="padding:8px;">Mots Lus</th>
+                                    <th style="padding:8px;">Score MFM</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr>
+                                    <td style="padding:8px;">Aujourd'hui</td>
+                                    <td style="padding:8px;">1 min 00s</td>
+                                    <td style="padding:8px;">115 mots</td>
+                                    <td style="padding:8px; font-weight:700; color:var(--accent-color);">112 MFM</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -456,27 +572,44 @@
         <i class="fa-solid fa-circle-check"></i> <span id="toast-message">Notification AuraDys</span>
     </div>
 
+    <!-- CODE SCRIPT INTERACTIF COMPLET ES6 -->
     <script type="module">
         import { KokoroTTS } from "https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js";
+
+        // --- BANQUE DE TEXTES JEUNESSE RÉELS ---
+        const STORIES = {
+            lievre: `Rien ne sert de courir ; il faut partir à point. Le Lièvre et la Tortue en sont un témoignage. « Gageons, dit celle-ci, que vous n'atteindrez point sitôt que moi ce but. » « Sitôt ? Êtes-vous sage ? » Reprit l'animal léger. « Ma commère, il vous faut purger avec quatre grains d'hellébore. » « Sage ou non, je parie encore. »`,
+            corbeau: `Maître Corbeau, sur un arbre perché, tenait en son bec un fromage. Maître Renard, par l'odeur alléché, lui tint à peu près ce langage : « Hé ! bonjour, Monsieur du Corbeau. Que vous êtes joli ! que vous me semblez beau ! Sans mentir, si votre ramage se rapporte à votre plumage, vous êtes le Phénix des hôtes de ces bois. »`,
+            petit_prince: `C'est alors qu'apparut le renard. « Bonjour », dit le renard. « Bonjour », répondit politement le petit prince, qui se retourna mais ne vit rien. « Je suis là », dit la voix, « sous le pommier ». « Qui es-tu ? » dit le petit prince. « Tu es bien joli... » « Je suis un renard », dit le renard. « Viens jouer avec moi », lui proposa le petit prince. « Je suis tellement triste... » « Je ne puis pas jouer avec toi », dit le renard. « Je ne suis pas apprivoisé. »`
+        };
+
+        // --- BASE DE DONNÉES DU LABO ANTI-CONFUSION ---
+        const QUIZ_DATA = [
+            { word: "ba___eau", target: "t", options: ["t", "d"], fullWord: "bateau" },
+            { word: "___oule", target: "p", options: ["p", "b"], fullWord: "poule" },
+            { word: "ca___ine", target: "b", options: ["b", "d"], fullWord: "cabine" },
+            { word: "___romage", target: "f", options: ["f", "v"], fullWord: "fromage" },
+            { word: "dra___on", target: "g", options: ["g", "q"], fullWord: "dragon" }
+        ];
 
         let state = {
             xp: 0,
             level: 1,
-            scaffoldingErrors: 0,
+            quizIndex: 0,
+            quizScore: 0,
             ttsModel: null,
             isTTSLoading: false,
             eyeTrackingActive: false,
             sylActive: false,
             silentActive: false,
             rulerActive: false,
-            rawText: ""
+            timerInterval: null,
+            timerSeconds: 300
         };
 
         const toast = document.getElementById('toast-notification');
         const toastMsg = document.getElementById('toast-message');
         const editor = document.getElementById('editor-display');
-
-        state.rawText = editor.innerText;
 
         function showToast(msg) {
             toastMsg.textContent = msg;
@@ -488,14 +621,16 @@
             state.xp += pts;
             if (state.xp >= state.level * 100) {
                 state.level++;
-                showToast(`🎉 Bravo ! Niveau ${state.level} atteint !`);
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                showToast(`🎉 Bravo ! Passage au Niveau ${state.level} !`);
             }
             document.getElementById('user-xp').textContent = state.xp;
             document.getElementById('user-level').textContent = state.level;
             document.getElementById('mfm-level-display').textContent = `Nv. ${state.level}`;
+            document.getElementById('dash-xp').textContent = state.xp;
         }
 
-        // --- NAVIGATION ONGLETS ---
+        // --- NAVIGATION ---
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -524,12 +659,21 @@
             showToast("Mode Examen basculé");
         });
 
-        // --- LOGIQUE PHONOLOGIQUE (Syllabes, Muettes, Phonèmes) ---
+        // --- GESTION DE LA BIBLIOTHÈQUE ---
+        document.getElementById('select-story').addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val !== 'custom' && STORIES[val]) {
+                editor.innerText = STORIES[val];
+                renderText();
+                showToast("Histoire chargée avec succès !");
+            }
+        });
+
+        // --- OUTILS PHONOLOGIQUES ---
         function renderText() {
             let text = editor.innerText;
             if (!text.trim()) return;
 
-            // 1. Syllabation
             if (state.sylActive) {
                 const words = text.split(/(\s+)/);
                 text = words.map(w => {
@@ -539,12 +683,10 @@
                 }).join('');
             }
 
-            // 2. Lettres muettes finales
             if (state.silentActive) {
                 text = text.replace(/([a-zA-Zàâéèêëîïôûù]+)([e|s|t|d|x|g]$)/gi, '$1<span class="silent">$2</span>');
             }
 
-            // 3. Phonèmes cibles
             const target = document.getElementById('select-phoneme').value;
             if (target === 'bd') text = text.replace(/[bd]/gi, m => `<span class="phoneme-target">${m}</span>`);
             if (target === 'pq') text = text.replace(/[pq]/gi, m => `<span class="phoneme-target">${m}</span>`);
@@ -557,19 +699,15 @@
             state.sylActive = !state.sylActive;
             e.currentTarget.classList.toggle('active-toggle', state.sylActive);
             renderText();
-            showToast(state.sylActive ? "Coloration syllabique activée" : "Syllabes désactivées");
         });
 
         document.getElementById('btn-toggle-silent').addEventListener('click', (e) => {
             state.silentActive = !state.silentActive;
             e.currentTarget.classList.toggle('active-toggle', state.silentActive);
             renderText();
-            showToast(state.silentActive ? "Lettres muettes grisées" : "Lettres muettes normales");
         });
 
-        document.getElementById('select-phoneme').addEventListener('change', () => {
-            renderText();
-        });
+        document.getElementById('select-phoneme').addEventListener('change', renderText);
 
         // Règle de lecture
         const ruler = document.getElementById('reading-ruler-elem');
@@ -577,7 +715,6 @@
             state.rulerActive = !state.rulerActive;
             ruler.style.display = state.rulerActive ? 'block' : 'none';
             e.currentTarget.classList.toggle('active-toggle', state.rulerActive);
-            showToast(state.rulerActive ? "Règle de lecture activée" : "Règle désactivée");
         });
 
         editor.addEventListener('mousemove', (e) => {
@@ -587,18 +724,13 @@
             ruler.style.top = `${Math.max(0, Math.min(y - 20, rect.height - 40))}px`;
         });
 
-        // --- SYNTHÈSE VOCALE (MULTI-MOTEUR) ---
+        // --- MULTI-MOTEUR SYNTHÈSE VOCALE ---
         function playNativeTTS(text, speed) {
-            if (!('speechSynthesis' in window)) {
-                showToast("Synthèse vocale non supportée.");
-                return;
-            }
+            if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             const voices = window.speechSynthesis.getVoices();
-            const bestVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Thomas') || v.name.includes('Audrey')))
-                            || voices.find(v => v.lang.startsWith('fr'));
-
+            const bestVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Thomas'))) || voices.find(v => v.lang.startsWith('fr'));
             if (bestVoice) utterance.voice = bestVoice;
             utterance.lang = 'fr-FR';
             utterance.rate = speed;
@@ -613,27 +745,17 @@
                     showToast("1er chargement Kokoro ONNX (~90 Mo)... Patientez...");
                     state.ttsModel = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", { dtype: "q8" });
                     state.isTTSLoading = false;
-                    showToast("Kokoro-82M prêt !");
-                } else if (state.isTTSLoading) {
-                    showToast("Chargement des poids en cours...");
-                    return;
                 }
-
                 showToast("Génération Kokoro locale...");
                 const result = await state.ttsModel.generate(text, { voice: "ff_siwis", speed: speed });
-
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const buffer = audioCtx.createBuffer(1, result.audio.length, result.sampling_rate);
                 buffer.getChannelData(0).set(result.audio);
-
                 const source = audioCtx.createBufferSource();
                 source.buffer = buffer;
                 source.connect(audioCtx.destination);
                 source.start(0);
-
-                showToast("Lecture Kokoro ONNX...");
             } catch (err) {
-                console.warn("Bascule automatique sur la voix système :", err);
                 playNativeTTS(text, speed);
             }
         }
@@ -642,7 +764,6 @@
             const text = editor.innerText;
             const engine = document.getElementById('select-tts-engine').value;
             const speed = parseFloat(document.getElementById('range-speech-rate').value) || 0.9;
-
             if (engine === 'native') playNativeTTS(text, speed);
             else playKokoroTTS(text, speed);
             addXP(10);
@@ -651,6 +772,138 @@
         document.getElementById('btn-stop-speech').addEventListener('click', () => {
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
             showToast("Lecture arrêtée.");
+        });
+
+        // --- LABO ANTI-CONFUSION GÉNÉRATIF ---
+        function loadQuizItem() {
+            const item = QUIZ_DATA[state.quizIndex];
+            document.getElementById('quiz-word').textContent = item.word;
+            document.getElementById('quiz-hint').style.display = 'none';
+
+            const container = document.getElementById('quiz-options');
+            container.innerHTML = '';
+
+            item.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-action';
+                btn.style.fontSize = '1.8rem';
+                btn.style.minWidth = '80px';
+                btn.textContent = opt;
+
+                btn.addEventListener('click', () => {
+                    if (opt === item.target) {
+                        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+                        showToast(`Bravo ! C'est bien "${item.fullWord}" (+20 XP)`);
+                        state.quizScore += 20;
+                        document.getElementById('quiz-score').textContent = state.quizScore;
+                        addXP(20);
+                        setTimeout(() => {
+                            state.quizIndex = (state.quizIndex + 1) % QUIZ_DATA.length;
+                            loadQuizItem();
+                        }, 1200);
+                    } else {
+                        showToast("Oups ! Essaie encore.");
+                        document.getElementById('quiz-hint').style.display = 'block';
+                    }
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        document.getElementById('btn-next-quiz').addEventListener('click', () => {
+            state.quizIndex = (state.quizIndex + 1) % QUIZ_DATA.length;
+            loadQuizItem();
+        });
+
+        document.getElementById('btn-speak-quiz-word').addEventListener('click', () => {
+            const item = QUIZ_DATA[state.quizIndex];
+            playNativeTTS(item.fullWord, 0.8);
+        });
+
+        loadQuizItem();
+
+        // --- SIMPLIFICATEUR FALC ---
+        document.getElementById('btn-falc-process').addEventListener('click', () => {
+            const txt = document.getElementById('falc-input').value;
+            if (!txt.trim()) return;
+
+            const sentences = txt.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            let html = '<ul style="padding-left:20px; line-height:2.2;">';
+            sentences.forEach(s => {
+                html += `<li style="margin-bottom:10px;"><strong>${s.trim()}.</strong></li>`;
+            });
+            html += '</ul>';
+            document.getElementById('falc-output').innerHTML = html;
+            addXP(15);
+            showToast("Texte épuré selon les normes FALC !");
+        });
+
+        // --- MANIPULATION BASE 10 ---
+        let b10 = { u: 0, d: 0, c: 0 };
+        function updateB10() {
+            const board = document.getElementById('b10-board');
+            board.innerHTML = '';
+            for(let i=0; i<b10.c; i++) board.innerHTML += '<div class="b10-block"><div class="b10-hundreds" title="Centaine"></div></div>';
+            for(let i=0; i<b10.d; i++) board.innerHTML += '<div class="b10-block"><div class="b10-tens" title="Dizaine"></div></div>';
+            for(let i=0; i<b10.u; i++) board.innerHTML += '<div class="b10-block"><div class="b10-units" title="Unité"></div></div>';
+            document.getElementById('b10-val').textContent = b10.u + (b10.d*10) + (b10.c*100);
+        }
+
+        document.getElementById('btn-add-u').addEventListener('click', () => { b10.u++; updateB10(); });
+        document.getElementById('btn-add-d').addEventListener('click', () => { b10.d++; updateB10(); });
+        document.getElementById('btn-add-c').addEventListener('click', () => { b10.c++; updateB10(); });
+        document.getElementById('btn-reset-b10').addEventListener('click', () => { b10 = { u:0, d:0, c:0 }; updateB10(); });
+
+        // --- TIME-TIMER TDAH ---
+        function updateTimerDisplay() {
+            const mins = Math.floor(state.timerSeconds / 60);
+            const secs = state.timerSeconds % 60;
+            document.getElementById('timer-text').textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+            const pct = ((300 - state.timerSeconds) / 300) * 360;
+            document.getElementById('timer-display-circle').style.background = `conic-gradient(var(--accent-color) ${pct}deg, var(--bg-secondary) ${pct}deg)`;
+        }
+
+        document.getElementById('btn-start-timer').addEventListener('click', () => {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(() => {
+                if (state.timerSeconds > 0) {
+                    state.timerSeconds--;
+                    updateTimerDisplay();
+                } else {
+                    clearInterval(state.timerInterval);
+                    confetti({ particleCount: 150, spread: 80 });
+                    showToast("⏰ Temps écoulé ! Pause bien méritée (+25 XP)");
+                    addXP(25);
+                }
+            }, 1000);
+            showToast("Chronomètre visuel démarré (5 min)");
+        });
+
+        document.getElementById('btn-pause-timer').addEventListener('click', () => {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            showToast("Timer en pause.");
+        });
+
+        document.getElementById('btn-reset-timer').addEventListener('click', () => {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerSeconds = 300;
+            updateTimerDisplay();
+            showToast("Timer réinitialisé.");
+        });
+
+        // --- TEST MFM CLINIQUE ---
+        let startTime = 0;
+        document.getElementById('btn-start-mfm-test').addEventListener('click', () => {
+            startTime = Date.now();
+            showToast("Test MFM démarré ! Lisez le texte pendant 1 minute...");
+            setTimeout(() => {
+                const elapsedMin = (Date.now() - startTime) / 60000;
+                const words = editor.innerText.split(/\s+/).length;
+                const mfmScore = Math.round(words / elapsedMin);
+                document.getElementById('mfm-score-display').textContent = `${mfmScore} MFM`;
+                showToast(`Test MFM terminé : Score de ${mfmScore} MFM !`);
+                addXP(35);
+            }, 10000); // Test accéléré pour la démonstration
         });
 
         // --- EYE-TRACKING ---
@@ -666,65 +919,6 @@
             if (!state.eyeTrackingActive) return;
             gazePointer.style.left = `${e.clientX}px`;
             gazePointer.style.top = `${e.clientY}px`;
-        });
-
-        // --- LABO ANTI-CONFUSION ---
-        document.getElementById('btn-choice-1').addEventListener('click', () => {
-            showToast("Bravo ! Bonne réponse (+20 XP)");
-            addXP(20);
-            document.getElementById('scaffolding-hint').style.display = 'none';
-            state.scaffoldingErrors = 0;
-        });
-
-        document.getElementById('btn-choice-2').addEventListener('click', () => {
-            state.scaffoldingErrors++;
-            showToast("Réessaie encore !");
-            if (state.scaffoldingErrors >= 2) {
-                document.getElementById('scaffolding-hint').style.display = 'block';
-                showToast("Indice visuel débloqué !");
-            }
-        });
-
-        // --- TEST MFM ---
-        let startTime = 0;
-        document.getElementById('btn-start-mfm-test').addEventListener('click', () => {
-            startTime = Date.now();
-            showToast("Test MFM démarré ! Lisez à haute voix...");
-            setTimeout(() => {
-                const elapsedMin = (Date.now() - startTime) / 60000;
-                const words = editor.innerText.split(/\s+/).length;
-                const mfmScore = Math.round(words / elapsedMin);
-                document.getElementById('mfm-score-display').textContent = `${mfmScore} MFM`;
-                showToast(`Test Terminé : ${mfmScore} MFM !`);
-                addXP(30);
-            }, 10000);
-        });
-
-        // --- BASE 10 ---
-        let b10 = { u: 0, d: 0, c: 0 };
-        function updateB10() {
-            const board = document.getElementById('b10-board');
-            board.innerHTML = '';
-            for(let i=0; i<b10.c; i++) board.innerHTML += '<div class="b10-block"><div class="b10-hundreds"></div></div>';
-            for(let i=0; i<b10.d; i++) board.innerHTML += '<div class="b10-block"><div class="b10-tens"></div></div>';
-            for(let i=0; i<b10.u; i++) board.innerHTML += '<div class="b10-block"><div class="b10-units"></div></div>';
-            document.getElementById('b10-val').textContent = b10.u + (b10.d*10) + (b10.c*100);
-        }
-
-        document.getElementById('btn-add-u').addEventListener('click', () => { b10.u++; updateB10(); });
-        document.getElementById('btn-add-d').addEventListener('click', () => { b10.d++; updateB10(); });
-        document.getElementById('btn-add-c').addEventListener('click', () => { b10.c++; updateB10(); });
-
-        // --- FALC ---
-        document.getElementById('btn-falc-process').addEventListener('click', () => {
-            const txt = document.getElementById('falc-input').value;
-            if (!txt.trim()) return;
-            const sentences = txt.split(/[.!?]+/).filter(s => s.trim().length > 0);
-            let html = '<ul style="padding-left:20px; line-height:2;">';
-            sentences.forEach(s => { html += `<li><strong>${s.trim()}.</strong></li>`; });
-            html += '</ul>';
-            document.getElementById('falc-output').innerHTML = html;
-            addXP(15);
         });
     </script>
 </body>
