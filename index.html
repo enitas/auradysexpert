@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraDys Expert V4.2 - Multi-Moteur Vocale HD & Local</title>
+    <title>AuraDys Expert V4.3 - Neuro-Pédagogie & Multi-TTS</title>
 
     <!-- Isolation Cross-Origin pour WebAssembly/WebGPU (GitHub Pages & Cloudflare) -->
     <script src="coi-serviceworker.js"></script>
@@ -146,7 +146,7 @@
         }
 
         .reader-grid, .math-grid, .dashboard-grid {
-            display: grid; grid-template-columns: 320px 1fr; gap: 2rem;
+            display: grid; grid-template-columns: 340px 1fr; gap: 2rem;
         }
 
         .math-grid { grid-template-columns: 1fr 1fr; }
@@ -181,11 +181,59 @@
             background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);
         }
 
+        .btn-secondary.active-toggle {
+            background: var(--accent-light);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
         .text-display-box {
             background: var(--bg-surface); border: 2px solid var(--border-color);
-            border-radius: var(--border-radius); padding: 2rem; min-height: 350px;
+            border-radius: var(--border-radius); padding: 2rem; min-height: 380px;
             box-shadow: var(--shadow-soft); position: relative; outline: none; overflow-y: auto;
         }
+
+        .reading-ruler {
+            position: absolute; left: 0; right: 0; height: 44px;
+            background: rgba(255, 242, 117, 0.35); border-top: 2px solid #E6C200;
+            border-bottom: 2px solid #E6C200; pointer-events: none; display: none; z-index: 10;
+        }
+
+        /* Classes Phonologiques */
+        .syl-1 { color: var(--syl-color-1); font-weight: 600; }
+        .syl-2 { color: var(--syl-color-2); font-weight: 600; }
+        .phoneme-target { background-color: var(--target-highlight); border-radius: 3px; padding: 0 2px; font-weight: 700; }
+        .silent { color: var(--silent-letter); opacity: 0.55; }
+
+        .base10-board {
+            display: flex; gap: 15px; min-height: 180px; background: var(--bg-secondary);
+            border-radius: var(--border-radius); padding: 1rem; margin-top: 1rem;
+            align-items: flex-end; justify-content: center;
+        }
+
+        .b10-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .b10-hundreds { width: 50px; height: 50px; background: #2980B9; border-radius: 4px; }
+        .b10-tens { width: 12px; height: 45px; background: #27AE60; border-radius: 3px; }
+        .b10-units { width: 12px; height: 12px; background: #E67E22; border-radius: 2px; }
+
+        .operation-grid {
+            display: grid; grid-template-columns: repeat(4, 60px); gap: 8px;
+            justify-content: center; margin: 1.5rem 0; font-family: monospace; font-size: 1.8rem;
+        }
+
+        .op-cell {
+            width: 60px; height: 60px; border: 2px solid var(--border-color);
+            border-radius: 8px; text-align: center; line-height: 56px;
+            background: var(--bg-surface); font-weight: 700;
+        }
+
+        .op-cell.carry {
+            height: 35px; font-size: 1rem; line-height: 30px; border-style: dashed;
+            color: #C41E3A; background: #FFF0F0;
+        }
+
+        .op-line { grid-column: span 4; height: 4px; background: var(--text-primary); border-radius: 2px; }
 
         .gaze-target {
             position: fixed; width: 24px; height: 24px; border-radius: 50%;
@@ -210,7 +258,7 @@
     <header>
         <div class="brand">
             <i class="fa-solid fa-brain-circuit"></i>
-            <span>AuraDys <small style="font-size:0.6em; opacity:0.8;">EXPERT V4.2</small></span>
+            <span>AuraDys <small style="font-size:0.6em; opacity:0.8;">EXPERT V4.3</small></span>
         </div>
         
         <nav class="nav-tabs non-examen-elem" role="tablist">
@@ -231,64 +279,92 @@
     </header>
 
     <main>
+        <!-- TAB LECTURE -->
         <section id="tab-lecture" class="tab-panel active">
             <div class="reader-grid">
                 <aside class="settings-card non-examen-elem">
                     <h3><i class="fa-solid fa-sliders"></i> Réglages Synthèse & Lecture</h3>
                     
+                    <!-- 1. MOTEUR VOCAL -->
                     <div class="form-group">
                         <label for="select-tts-engine">Moteur Vocal</label>
                         <select id="select-tts-engine" class="btn-action btn-secondary" style="width:100%;">
-                            <option value="native" selected>⚡ Voix Système HD (Recommandé)</option>
-                            <option value="kokoro">🧠 Kokoro-82M Local ONNX</option>
+                            <option value="native" selected>⚡ Voix Système HD (Fluide & Rapide)</option>
+                            <option value="kokoro">🧠 Kokoro-82M Local ONNX (Offline)</option>
                         </select>
                     </div>
 
+                    <!-- 2. CADENCE VOCALE -->
                     <div class="form-group">
-                        <label for="range-speech-rate">Vitesse de Lecture</label>
+                        <label for="range-speech-rate">Vitesse de Lecture Vocal</label>
                         <input type="range" id="range-speech-rate" class="range-slider" min="0.5" max="1.5" step="0.1" value="0.9">
                     </div>
 
-                    <div style="margin-top: 1.5rem; display:flex; flex-direction:column; gap:8px;">
+                    <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.25rem 0;">
+
+                    <!-- 3. PHONÈMES CIBLES -->
+                    <div class="form-group">
+                        <label for="select-phoneme">Surligner Phonèmes Cibles</label>
+                        <select id="select-phoneme" class="btn-action btn-secondary" style="width:100%;">
+                            <option value="none">Aucun</option>
+                            <option value="bd">Confusions b / d</option>
+                            <option value="pq">Confusions p / q</option>
+                            <option value="fv">Confusions f / v</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. ADAPTATIONS VISUELLES & ASSISTANCES -->
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="btn-action btn-secondary" id="btn-toggle-syl"><i class="fa-solid fa-scissors"></i> Coloration Syllabique</button>
+                        <button class="btn-action btn-secondary" id="btn-toggle-silent"><i class="fa-solid fa-eye-slash"></i> Griser Lettres Muettes</button>
+                        <button class="btn-action btn-secondary" id="btn-toggle-ruler"><i class="fa-solid fa-ruler-horizontal"></i> Règle de Lecture Survol</button>
                         <button class="btn-action btn-secondary" id="btn-toggle-eyetracking"><i class="fa-solid fa-eye"></i> Eye-Tracking (Regard)</button>
                     </div>
                 </aside>
 
                 <div class="reader-workspace">
-                    <div class="toolbar non-examen-elem" style="display:flex; gap:10px;">
+                    <div class="toolbar non-examen-elem" style="display:flex; gap:10px; flex-wrap:wrap;">
                         <button class="btn-action" id="btn-play-speech"><i class="fa-solid fa-play"></i> Lancer la Lecture</button>
                         <button class="btn-action btn-secondary" id="btn-stop-speech"><i class="fa-solid fa-stop"></i> Stopper</button>
                         <button class="btn-action btn-secondary" id="btn-start-mfm-test"><i class="fa-solid fa-stopwatch"></i> Démarrer Test MFM</button>
+                        <button class="btn-action btn-secondary" id="btn-dictation"><i class="fa-solid fa-microphone"></i> Dictée Vocale</button>
                     </div>
 
                     <div style="position:relative; margin-top: 15px;">
+                        <div id="reading-ruler-elem" class="reading-ruler"></div>
                         <div id="editor-display" class="text-display-box" contenteditable="true" spellcheck="false">
-                            Les troubles spécifiques du langage écrit et de l'apprentissage nécessitent une compensation adaptée. AuraDys V4.2 propose désormais deux moteurs de lecture : la voix système HD haute fidélité native pour une fluidité optimale, et le moteur local Kokoro-82M ONNX pour un fonctionnement 100 % hors-ligne.
+                            Les troubles spécifiques du langage écrit et de l'apprentissage nécessitent une compensation adaptée. AuraDys V4.3 combine les outils visuels d'aide au décodage, l'analyse syllabique, et deux moteurs vocaux puissants pour faciliter la lecture au quotidien.
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Autres onglets -->
+        <!-- TAB LABO ANTI-CONFUSION -->
         <section id="tab-labo" class="tab-panel">
             <div style="max-width:700px; margin:0 auto; text-align:center;" class="math-card">
-                <h3><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion</h3>
-                <p style="margin-bottom:1rem; color:var(--text-muted);">Trouvez le graphème correct :</p>
-                <div style="font-size:2.8rem; font-weight:700; color:var(--accent-color); margin:1.5rem 0;">ba___eau</div>
+                <h3><i class="fa-solid fa-vial-circle-check"></i> Labo Anti-Confusion (Scaffolding Adaptatif)</h3>
+                <p style="margin-bottom:1rem; color:var(--text-muted);">Trouvez le graphème correct pour valider l'exercice :</p>
+                <div id="lab-word-display" style="font-size:2.8rem; font-weight:700; color:var(--accent-color); margin:1.5rem 0;">ba___eau</div>
+                
+                <div id="scaffolding-hint" style="margin-bottom:1rem; font-style:italic; color:#E67E22; display:none;">
+                    💡 Indice visuel activé : Le son produit une vibration sur les lèvres.
+                </div>
+
                 <div style="display:flex; justify-content:center; gap:1.5rem;">
-                    <button class="btn-action" onclick="alert('Bravo ! (+20 XP)')">t</button>
-                    <button class="btn-action btn-secondary" onclick="alert('Essaie encore !')">d</button>
+                    <button class="btn-action" id="btn-choice-1">t</button>
+                    <button class="btn-action btn-secondary" id="btn-choice-2">d</button>
                 </div>
             </div>
         </section>
 
+        <!-- TAB FALC -->
         <section id="tab-falc" class="tab-panel">
             <div class="math-grid">
                 <div class="math-card">
                     <h3>Consigne Complexe</h3>
-                    <textarea id="falc-input" style="width:100%; height:180px; padding:10px; border-radius:8px;" placeholder="Collez le texte..."></textarea>
-                    <button class="btn-action" style="width:100%; margin-top:10px;" onclick="document.getElementById('falc-output').innerHTML='<ul><li><strong>Texte simplifié en FALC.</strong></li></ul>'">Simplifier en FALC</button>
+                    <textarea id="falc-input" style="width:100%; height:180px; padding:10px; border-radius:8px;" placeholder="Collez le texte à simplifier..."></textarea>
+                    <button class="btn-action" id="btn-falc-process" style="width:100%; margin-top:10px;">Simplifier en FALC</button>
                 </div>
                 <div class="math-card">
                     <h3>Version Épurée FALC</h3>
@@ -297,24 +373,81 @@
             </div>
         </section>
 
+        <!-- TAB DYSCALCULIE -->
         <section id="tab-maths" class="tab-panel">
-            <div class="math-card">
-                <h3>Dyscalculie - Base 10</h3>
-                <p>Manipulation visuelle et tactile des quantités numériques.</p>
+            <div class="math-grid">
+                <div class="math-card">
+                    <h3>Manipulation Base 10</h3>
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        <button class="btn-action btn-secondary" id="btn-add-u">+1 Unité</button>
+                        <button class="btn-action btn-secondary" id="btn-add-d">+1 Dizaine</button>
+                        <button class="btn-action btn-secondary" id="btn-add-c">+1 Centaine</button>
+                    </div>
+                    <div id="b10-board" class="base10-board"></div>
+                    <div style="margin-top:10px; font-weight:700;">Valeur : <span id="b10-val">0</span></div>
+                </div>
+                <div class="math-card">
+                    <h3>Poseur d'Opérations Alignées</h3>
+                    <div class="operation-grid">
+                        <div class="op-cell carry" contenteditable="true"></div>
+                        <div class="op-cell carry" contenteditable="true"></div>
+                        <div class="op-cell carry" contenteditable="true"></div>
+                        <div class="op-cell carry" contenteditable="true"></div>
+                        <div class="op-cell" contenteditable="true">1</div>
+                        <div class="op-cell" contenteditable="true">4</div>
+                        <div class="op-cell" contenteditable="true">8</div>
+                        <div class="op-cell" contenteditable="true">5</div>
+                        <div class="op-cell" contenteditable="true">+</div>
+                        <div class="op-cell" contenteditable="true">2</div>
+                        <div class="op-cell" contenteditable="true">6</div>
+                        <div class="op-cell" contenteditable="true">7</div>
+                        <div class="op-line"></div>
+                        <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
+                        <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
+                        <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
+                        <div class="op-cell" contenteditable="true" style="background:var(--accent-light);"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- TAB TDAH -->
         <section id="tab-tdah" class="tab-panel">
             <div class="math-card">
-                <h3>TDAH - Structure & Focus</h3>
-                <p>Outils de structuration visuelle et canalisation attentionnelle.</p>
+                <h3>Carte Mentale TDAH & Structuration</h3>
+                <div style="height:350px; background:var(--bg-secondary); border-radius:12px; display:flex; align-items:center; justify-content:center; position:relative;">
+                    <div style="padding:15px 25px; background:var(--bg-surface); border:2px solid var(--accent-color); border-radius:20px; font-weight:700;">
+                        💡 Idée Centrale (TDAH)
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- TAB DASHBOARD MFM -->
         <section id="tab-dashboard" class="tab-panel">
-            <div class="math-card">
-                <h3>Dashboard Clinique MFM</h3>
-                <p>Vitesse de lecture : <strong id="mfm-score-display">112 MFM</strong> | Précision : <strong>96%</strong></p>
+            <div class="dashboard-grid">
+                <aside class="settings-card">
+                    <h3><i class="fa-solid fa-user-doctor"></i> Bilan Clinique</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Métriques mesurées lors des sessions de lecture.</p>
+                    <button class="btn-action" style="width:100%;" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimer Bilan MFM</button>
+                </aside>
+
+                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem;">
+                        <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:12px; text-align:center;">
+                            <small>Vitesse MFM</small>
+                            <div id="mfm-score-display" style="font-size:2rem; font-weight:700; color:var(--accent-color);">112 MFM</div>
+                        </div>
+                        <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:12px; text-align:center;">
+                            <small>Précision</small>
+                            <div id="mfm-precision-display" style="font-size:2rem; font-weight:700; color:var(--accent-color);">96%</div>
+                        </div>
+                        <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:12px; text-align:center;">
+                            <small>Niveau Gamifié</small>
+                            <div id="mfm-level-display" style="font-size:2rem; font-weight:700; color:var(--accent-color);">Nv. 1</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -329,13 +462,21 @@
         let state = {
             xp: 0,
             level: 1,
+            scaffoldingErrors: 0,
             ttsModel: null,
             isTTSLoading: false,
-            eyeTrackingActive: false
+            eyeTrackingActive: false,
+            sylActive: false,
+            silentActive: false,
+            rulerActive: false,
+            rawText: ""
         };
 
         const toast = document.getElementById('toast-notification');
         const toastMsg = document.getElementById('toast-message');
+        const editor = document.getElementById('editor-display');
+
+        state.rawText = editor.innerText;
 
         function showToast(msg) {
             toastMsg.textContent = msg;
@@ -343,7 +484,18 @@
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        // Navigation
+        function addXP(pts) {
+            state.xp += pts;
+            if (state.xp >= state.level * 100) {
+                state.level++;
+                showToast(`🎉 Bravo ! Niveau ${state.level} atteint !`);
+            }
+            document.getElementById('user-xp').textContent = state.xp;
+            document.getElementById('user-level').textContent = state.level;
+            document.getElementById('mfm-level-display').textContent = `Nv. ${state.level}`;
+        }
+
+        // --- NAVIGATION ONGLETS ---
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -353,7 +505,7 @@
             });
         });
 
-        // Thèmes & Polices
+        // --- THÈMES & POLICES ---
         document.getElementById('btn-theme-toggle').addEventListener('click', () => {
             const body = document.body;
             const current = body.getAttribute('data-theme');
@@ -367,39 +519,99 @@
             showToast("Basculement de police");
         });
 
-        // 1. Synthèse Système Native HD (Web Speech API)
-        function playNativeTTS(text, speed) {
-            if (!('speechSynthesis' in window)) {
-                showToast("Synthese vocale non supportée sur ce navigateur.");
-                return;
+        document.getElementById('btn-mode-examen').addEventListener('click', () => {
+            document.body.classList.toggle('mode-examen');
+            showToast("Mode Examen basculé");
+        });
+
+        // --- LOGIQUE PHONOLOGIQUE (Syllabes, Muettes, Phonèmes) ---
+        function renderText() {
+            let text = editor.innerText;
+            if (!text.trim()) return;
+
+            // 1. Syllabation
+            if (state.sylActive) {
+                const words = text.split(/(\s+)/);
+                text = words.map(w => {
+                    if (/^\s+$/.test(w) || w.length <= 3) return w;
+                    const syls = w.match(/[^aeiouyyàâéèêëîïôûù]*[aeiouyyàâéèêëîïôûù]+(?:[^aeiouyyàâéèêëîïôûù](?=[^aeiouyyàâéèêëîïôûù][aeiouyyàâéèêëîïôûù])|[^aeiouyyàâéèêëîïôûù]*$)?/gi);
+                    return syls ? syls.map((s, i) => `<span class="${i % 2 === 0 ? 'syl-1' : 'syl-2'}">${s}</span>`).join('') : w;
+                }).join('');
             }
 
+            // 2. Lettres muettes finales
+            if (state.silentActive) {
+                text = text.replace(/([a-zA-Zàâéèêëîïôûù]+)([e|s|t|d|x|g]$)/gi, '$1<span class="silent">$2</span>');
+            }
+
+            // 3. Phonèmes cibles
+            const target = document.getElementById('select-phoneme').value;
+            if (target === 'bd') text = text.replace(/[bd]/gi, m => `<span class="phoneme-target">${m}</span>`);
+            if (target === 'pq') text = text.replace(/[pq]/gi, m => `<span class="phoneme-target">${m}</span>`);
+            if (target === 'fv') text = text.replace(/[fv]/gi, m => `<span class="phoneme-target">${m}</span>`);
+
+            editor.innerHTML = text;
+        }
+
+        document.getElementById('btn-toggle-syl').addEventListener('click', (e) => {
+            state.sylActive = !state.sylActive;
+            e.currentTarget.classList.toggle('active-toggle', state.sylActive);
+            renderText();
+            showToast(state.sylActive ? "Coloration syllabique activée" : "Syllabes désactivées");
+        });
+
+        document.getElementById('btn-toggle-silent').addEventListener('click', (e) => {
+            state.silentActive = !state.silentActive;
+            e.currentTarget.classList.toggle('active-toggle', state.silentActive);
+            renderText();
+            showToast(state.silentActive ? "Lettres muettes grisées" : "Lettres muettes normales");
+        });
+
+        document.getElementById('select-phoneme').addEventListener('change', () => {
+            renderText();
+        });
+
+        // Règle de lecture
+        const ruler = document.getElementById('reading-ruler-elem');
+        document.getElementById('btn-toggle-ruler').addEventListener('click', (e) => {
+            state.rulerActive = !state.rulerActive;
+            ruler.style.display = state.rulerActive ? 'block' : 'none';
+            e.currentTarget.classList.toggle('active-toggle', state.rulerActive);
+            showToast(state.rulerActive ? "Règle de lecture activée" : "Règle désactivée");
+        });
+
+        editor.addEventListener('mousemove', (e) => {
+            if (!state.rulerActive) return;
+            const rect = editor.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            ruler.style.top = `${Math.max(0, Math.min(y - 20, rect.height - 40))}px`;
+        });
+
+        // --- SYNTHÈSE VOCALE (MULTI-MOTEUR) ---
+        function playNativeTTS(text, speed) {
+            if (!('speechSynthesis' in window)) {
+                showToast("Synthèse vocale non supportée.");
+                return;
+            }
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             const voices = window.speechSynthesis.getVoices();
-            
-            // Sélection prioritaire des meilleures voix françaises HD / Naturelles
             const bestVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Thomas') || v.name.includes('Audrey')))
                             || voices.find(v => v.lang.startsWith('fr'));
 
             if (bestVoice) utterance.voice = bestVoice;
             utterance.lang = 'fr-FR';
             utterance.rate = speed;
-
             window.speechSynthesis.speak(utterance);
-            showToast("Lecture Vocale HD Système en cours...");
+            showToast("Lecture Vocale Système HD...");
         }
 
-        // 2. Moteur Kokoro-82M ONNX Local
         async function playKokoroTTS(text, speed) {
             try {
                 if (!state.ttsModel && !state.isTTSLoading) {
                     state.isTTSLoading = true;
                     showToast("1er chargement Kokoro ONNX (~90 Mo)... Patientez...");
-                    
-                    state.ttsModel = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
-                        dtype: "q8"
-                    });
+                    state.ttsModel = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", { dtype: "q8" });
                     state.isTTSLoading = false;
                     showToast("Kokoro-82M prêt !");
                 } else if (state.isTTSLoading) {
@@ -408,10 +620,7 @@
                 }
 
                 showToast("Génération Kokoro locale...");
-                const result = await state.ttsModel.generate(text, {
-                    voice: "ff_siwis",
-                    speed: speed
-                });
+                const result = await state.ttsModel.generate(text, { voice: "ff_siwis", speed: speed });
 
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const buffer = audioCtx.createBuffer(1, result.audio.length, result.sampling_rate);
@@ -422,38 +631,34 @@
                 source.connect(audioCtx.destination);
                 source.start(0);
 
-                showToast("Lecture Kokoro ONNX en cours...");
+                showToast("Lecture Kokoro ONNX...");
             } catch (err) {
                 console.warn("Bascule automatique sur la voix système :", err);
                 playNativeTTS(text, speed);
             }
         }
 
-        // Actionnaire Boutons Lecture / Arrêt
         document.getElementById('btn-play-speech').addEventListener('click', () => {
-            const text = document.getElementById('editor-display').innerText;
+            const text = editor.innerText;
             const engine = document.getElementById('select-tts-engine').value;
             const speed = parseFloat(document.getElementById('range-speech-rate').value) || 0.9;
 
-            if (engine === 'native') {
-                playNativeTTS(text, speed);
-            } else {
-                playKokoroTTS(text, speed);
-            }
+            if (engine === 'native') playNativeTTS(text, speed);
+            else playKokoroTTS(text, speed);
+            addXP(10);
         });
 
         document.getElementById('btn-stop-speech').addEventListener('click', () => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-            showToast("Lecture interrompue.");
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            showToast("Lecture arrêtée.");
         });
 
-        // Eye-Tracking
+        // --- EYE-TRACKING ---
         const gazePointer = document.getElementById('gaze-pointer');
-        document.getElementById('btn-toggle-eyetracking').addEventListener('click', () => {
+        document.getElementById('btn-toggle-eyetracking').addEventListener('click', (e) => {
             state.eyeTrackingActive = !state.eyeTrackingActive;
             gazePointer.style.display = state.eyeTrackingActive ? 'block' : 'none';
+            e.currentTarget.classList.toggle('active-toggle', state.eyeTrackingActive);
             showToast(state.eyeTrackingActive ? "Eye-Tracking Activé" : "Eye-Tracking Désactivé");
         });
 
@@ -461,6 +666,65 @@
             if (!state.eyeTrackingActive) return;
             gazePointer.style.left = `${e.clientX}px`;
             gazePointer.style.top = `${e.clientY}px`;
+        });
+
+        // --- LABO ANTI-CONFUSION ---
+        document.getElementById('btn-choice-1').addEventListener('click', () => {
+            showToast("Bravo ! Bonne réponse (+20 XP)");
+            addXP(20);
+            document.getElementById('scaffolding-hint').style.display = 'none';
+            state.scaffoldingErrors = 0;
+        });
+
+        document.getElementById('btn-choice-2').addEventListener('click', () => {
+            state.scaffoldingErrors++;
+            showToast("Réessaie encore !");
+            if (state.scaffoldingErrors >= 2) {
+                document.getElementById('scaffolding-hint').style.display = 'block';
+                showToast("Indice visuel débloqué !");
+            }
+        });
+
+        // --- TEST MFM ---
+        let startTime = 0;
+        document.getElementById('btn-start-mfm-test').addEventListener('click', () => {
+            startTime = Date.now();
+            showToast("Test MFM démarré ! Lisez à haute voix...");
+            setTimeout(() => {
+                const elapsedMin = (Date.now() - startTime) / 60000;
+                const words = editor.innerText.split(/\s+/).length;
+                const mfmScore = Math.round(words / elapsedMin);
+                document.getElementById('mfm-score-display').textContent = `${mfmScore} MFM`;
+                showToast(`Test Terminé : ${mfmScore} MFM !`);
+                addXP(30);
+            }, 10000);
+        });
+
+        // --- BASE 10 ---
+        let b10 = { u: 0, d: 0, c: 0 };
+        function updateB10() {
+            const board = document.getElementById('b10-board');
+            board.innerHTML = '';
+            for(let i=0; i<b10.c; i++) board.innerHTML += '<div class="b10-block"><div class="b10-hundreds"></div></div>';
+            for(let i=0; i<b10.d; i++) board.innerHTML += '<div class="b10-block"><div class="b10-tens"></div></div>';
+            for(let i=0; i<b10.u; i++) board.innerHTML += '<div class="b10-block"><div class="b10-units"></div></div>';
+            document.getElementById('b10-val').textContent = b10.u + (b10.d*10) + (b10.c*100);
+        }
+
+        document.getElementById('btn-add-u').addEventListener('click', () => { b10.u++; updateB10(); });
+        document.getElementById('btn-add-d').addEventListener('click', () => { b10.d++; updateB10(); });
+        document.getElementById('btn-add-c').addEventListener('click', () => { b10.c++; updateB10(); });
+
+        // --- FALC ---
+        document.getElementById('btn-falc-process').addEventListener('click', () => {
+            const txt = document.getElementById('falc-input').value;
+            if (!txt.trim()) return;
+            const sentences = txt.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            let html = '<ul style="padding-left:20px; line-height:2;">';
+            sentences.forEach(s => { html += `<li><strong>${s.trim()}.</strong></li>`; });
+            html += '</ul>';
+            document.getElementById('falc-output').innerHTML = html;
+            addXP(15);
         });
     </script>
 </body>
